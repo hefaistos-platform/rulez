@@ -1,0 +1,56 @@
+// Detailed Detection Rule Information
+// TITLE: T1098.005: Account Manipulation - MachineGuid Modification
+// ID: 7f3b8c45-12a9-4b6e-8d32-9a1c5b8e4f1a
+// MITRE TECHNIQUE: T1098.005, T1070
+// TACTIC: Defense Evasion, Persistence
+// AUTHOR: hunt3r (Modified by Reviewer)
+// SEVERITY: Medium
+// STATUS: Experimental
+//
+// DESCRIPTION: 
+// Detects modification of the 'MachineGuid' registry value. This value is often reset during 
+// OS re-imaging or manually tampered with by attackers to bypass Conditional Access 
+// or break forensic correlation between log sources.
+//
+// DATA SOURCES: 
+// - DeviceRegistryEvents
+// - DeviceInfo
+//
+// QUERY:
+
+let TargetValueName = "MachineGuid";
+let TargetKeyPath = @"SOFTWARE\Microsoft\Cryptography";
+DeviceRegistryEvents
+| where Timestamp > ago(24h)
+| where ActionType in ("RegistryValueSet", "RegistryKeyCreated")
+// FIX: Search for the Key Path and Value Name separately
+| where RegistryKey endswith TargetKeyPath
+| where RegistryValueName == TargetValueName
+| extend NewMachineGuid = RegistryValueData
+// OPTIONAL: Filter out likely benign OS updates (Tune based on environment)
+| where not(InitiatingProcessFolderPath has @"\Windows\SoftwareDistribution\" or InitiatingProcessFolderPath has @"\$WINDOWS.~BT\")
+// Enrich with Hardware Invariants
+| join kind=leftouter (
+    DeviceInfo
+    | where Timestamp > ago(24h)
+    | where isnotempty(BiosSerialNumber)
+    | summarize arg_max(Timestamp, BiosSerialNumber, Model, Vendor, OSPlatform, OSBuild) by DeviceId
+) on DeviceId
+| project 
+    TimeGenerated = Timestamp,
+    DeviceName,
+    DeviceId,
+    ActionType,
+    RegistryKey,
+    RegistryValueName,
+    NewMachineGuid,
+    PreviousMachineGuid = PreviousRegistryValueData, // Useful if Action is ValueSet
+    BiosSerialNumber,
+    Model,
+    Vendor,
+    InitiatingProcessFileName,
+    InitiatingProcessFolderPath,
+    InitiatingProcessCommandLine, // Added for context
+    InitiatingProcessAccountName
+| extend Entity = DeviceName
+| sort by TimeGenerated desc
