@@ -1,0 +1,49 @@
+configurations:
+  defender_for_endpoint:
+    alert:
+      category: Suspicious Activity
+      severity: Medium
+      techniques:
+      - T1562.008
+      title: '[Prod] [JPH] AKS - Stopped Logging'
+    impacted_entities: {}
+    query: |-
+      // ============================================
+      // Rule Metadata
+      // ============================================
+      // Author: hunt3r
+      // Rule name: [Prod] [JPH] AKS - Stopped Logging
+      // ID: 3aa58fc8-84b6-4a6b-b553-fb66dab75a7d
+      // Severity: MEDIUM
+      // Status: DEPLOYED
+      // MITRE technique: T1562.008
+      // ============================================
+
+      // tags: kql, esel, detect::aks, t1562.008
+      // [Prod] [JPH] AKS - Stopped Logging
+      // Detect assets that haven't sent a heartbeat in the last time period
+      // Set the threshold based on your requirements (e.g., 30m, 1h, 4h)
+      let Threshold = 15m;
+      Heartbeat
+      | summarize LastHeartbeat = max(TimeGenerated) by Computer, OSType, Category
+      | where LastHeartbeat < ago(Threshold)
+      | extend InactiveDuration = now() - LastHeartbeat
+      | project Computer, LastHeartbeat, InactiveDuration, OSType, Category
+      | order by InactiveDuration desc
+    scheduling: 1H
+    schema: defender_for_endpoint::2.0
+    scope:
+      selection: All
+    status: PRODUCTION
+description: '[Prod] [JPH] AKS - Stopped Logging'
+metadata:
+  author: hunt3r
+  created: '2026-04-07T09:29:10.098024+00:00'
+  modified: '2026-04-08T16:57:52.553239+00:00'
+  schema: mdr::2.1
+  tlp: amber
+  uuid: 797e88f3-057a-5e59-907a-1d623f949c88
+  version: 1
+name: mdr_de_t1562_008_001
+response:
+  alert_severity: Medium
