@@ -29,7 +29,7 @@ objective:
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 54259432-5c57-48dd-994f-1c09c59f7ee8
+    uuid: 8c673fd6-733c-420c-9a03-1561f733c709
   threats:
   - e538df70-9c5b-403e-a096-3f0bbd6b92ce
   type: Threat
