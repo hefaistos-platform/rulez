@@ -29,7 +29,7 @@ objective:
     methodology: Behavioural
     name: Network Telemetry
     severity: Medium
-    uuid: f2c1ee10-d563-4eef-8ad4-d111364e6513
+    uuid: f21a9492-1dec-45c5-a78c-f88ac5e86906
   - data:
       availability: Unknown
       logsources:
@@ -43,7 +43,7 @@ objective:
     methodology: Behavioural
     name: File System Telemetry
     severity: Medium
-    uuid: 8103ffe3-b1ad-478e-a484-52bc81ac043a
+    uuid: b63c19ee-e6a7-426d-9ff6-72376c781491
   - data:
       availability: Unknown
       logsources:
@@ -57,7 +57,7 @@ objective:
     methodology: Behavioural
     name: Authentication Telemetry
     severity: Medium
-    uuid: 1aa7be74-7e0b-4a22-b2d9-9634c7d7514d
+    uuid: 034bd5ed-5e3d-4d84-92bb-4b0200a47073
   - data:
       availability: Unknown
       logsources:
@@ -72,7 +72,7 @@ objective:
     methodology: Behavioural
     name: Script Engine Telemetry
     severity: Medium
-    uuid: 85c8a86a-a6da-47d2-baf6-382429cfb67b
+    uuid: bb0d8097-61d0-4a34-81da-79ecea8ba24d
   - data:
       availability: Unknown
       logsources:
@@ -86,7 +86,7 @@ objective:
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 4180cd0a-428e-4050-99e6-6dc7e536fd7a
+    uuid: 6cd267e0-d174-41cc-a162-dbbcb5f5bf61
   threats:
   - 287a3286-3018-4b89-a0f8-899b66f5435d
   type: Threat
