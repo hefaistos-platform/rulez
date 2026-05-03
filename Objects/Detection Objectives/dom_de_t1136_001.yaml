@@ -1,0 +1,36 @@
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-07T09:09:23.875324+00:00'
+  modified: '2026-04-09T10:11:04.359125+00:00'
+  schema: dom::2.1
+  tlp: AMBER
+  uuid: 923c7489-f985-4658-bec0-b45f1bf43762
+  version: 1
+name: dom_de_t1136_001
+objective:
+  composition:
+    description: Single signal detection - standalone implementation
+    strategy: Independent
+  description: Detekuje hromadne zakladani uctu
+  priority: Medium
+  signals:
+  - data:
+      availability: Unknown
+      logsources:
+      - mde::Microsoft Defender XDR
+      requirements: Requires mde::Microsoft Defender XDR telemetry
+    description: Detection signal for Defender for Endpoint Query
+    entities:
+    - Process
+    - Host
+    id: sig-001
+    methodology: Behavioural
+    name: Defender for Endpoint Query
+    severity: Medium
+    uuid: da65d004-5f6e-49db-b45c-3bb1651ec56a
+  threats:
+  - e8421ad9-18ae-4eee-92af-a0d227bc8948
+  type: Threat
+tvm_ref: tvm_t1136
