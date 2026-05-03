@@ -1,0 +1,101 @@
+configurations:
+  defender_for_endpoint:
+    alert:
+      category: Suspicious Activity
+      description: Detekuje IoC z kampane by NUKIB event no. 288
+      severity: High
+      techniques:
+      - T1059.003
+      title: '[Prod][JPH][Atomic] ShadowPad RoboForm DLL Sideload'
+    impacted_entities:
+      device: DeviceName
+    query: |-
+      // ============================================
+      // Rule Metadata
+      // ============================================
+      // Author: hunt3r
+      // Rule name: [Prod][JPH][Atomic] ShadowPad RoboForm DLL Sideload
+      // ID: f54cf5f9-a1c4-4e5e-9c21-95456451888f
+      // Severity: MEDIUM
+      // Status: IDEA
+      // MITRE technique: T1059.003
+      // ============================================
+
+      // tags: kql, t1059.003, detect::sideload, detect::command, roboform, shadowpad
+      union
+      (
+          DeviceNetworkEvents
+          | where RemoteUrl in~ ("data.trustaviators.top")
+               or RemoteIP in ("193.56.255.178", "188.253.124.47", "146.70.113.116")
+          | extend MatchType = "Network IoC", IndicatorMatch = coalesce(RemoteUrl, RemoteIP)
+      ),
+      (
+          DeviceFileEvents
+          | where SHA256 in~ (
+              "aa1233393dded792b74e334c50849c477c4b86838b32ef45d6ab0dc36b4511e3",
+              "0e6a0510300fe171b5445da0e15ce43cedc5200d63f35bd110e3ea179841d58a",
+              "e9f8546082738ffa23e85e5949a62fd82898c8eb9886527da65b7a82db867f7f",
+              "1282108a65b0665dea94d3fbe874a63f247d761fafef56dd75e330f91c295823"
+              )
+               or FileName in~ (
+              "dmrccache.exe",
+              "roboform-x64.dll",
+              "213C4190.tmp",
+              "robo.exe",
+              "upd.bat",
+              "upda.bat"
+              )
+          | extend MatchType = "File IoC", IndicatorMatch = coalesce(SHA256, FileName)
+      ),
+      (
+          DeviceProcessEvents
+          | where SHA256 in~ (
+              "aa1233393dded792b74e334c50849c477c4b86838b32ef45d6ab0dc36b4511e3",
+              "0e6a0510300fe171b5445da0e15ce43cedc5200d63f35bd110e3ea179841d58a",
+              "e9f8546082738ffa23e85e5949a62fd82898c8eb9886527da65b7a82db867f7f",
+              "1282108a65b0665dea94d3fbe874a63f247d761fafef56dd75e330f91c295823"
+              )
+               or FileName in~ (
+              "dmrccache.exe",
+              "roboform-x64.dll",
+              "213C4190.tmp",
+              "robo.exe",
+              "upd.bat",
+              "upda.bat"
+              )
+          | extend MatchType = "Process IoC", IndicatorMatch = coalesce(SHA256, FileName)
+      )
+      | project Timestamp, DeviceName, MatchType, IndicatorMatch, ActionType, FileName, FolderPath, SHA256, RemoteIP, RemoteUrl, InitiatingProcessFileName, InitiatingProcessCommandLine
+      | sort by Timestamp desc
+    scheduling: 1H
+    schema: defender_for_endpoint::2.0
+    scope:
+      selection: All
+    status: PRODUCTION
+description: Detekuje IoC z kampane by NUKIB event no. 288
+dom_ref: dom_de_t1059_003_001
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-08T08:10:56.405527+00:00'
+  modified: '2026-04-12T16:46:34.846085+00:00'
+  schema: mdr::2.1
+  tlp: AMBER+STRICT
+  uuid: c107ae43-793c-4a4b-bc9d-50c3d8cbcd37
+  version: 1
+name: mdr_de_t1059_003_001
+platforms:
+- Windows
+response:
+  alert_severity: HIGH
+  procedure:
+    analysis:
+    - action: Get-Domain
+      input: domain.registration
+      output: 12-05-2028
+    containment:
+    - critical: true
+      description: Isolate endpoint
+targets:
+- Endpoints

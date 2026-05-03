@@ -1,0 +1,93 @@
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-08T08:10:56.405527+00:00'
+  modified: '2026-04-12T16:46:34.846085+00:00'
+  schema: dom::2.1
+  tlp: AMBER+STRICT
+  uuid: 69fc60a8-7331-40fc-a3c3-6773fde024cd
+  version: 1
+name: dom_de_t1059_003_001
+objective:
+  composition:
+    description: Combined detection using 5 coordinated signals
+    strategy: Combined
+  description: Detekuje IoC z kampane by NUKIB event no. 288
+  priority: High
+  signals:
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::Network Logs
+      requirements: Requires siem::Network Logs telemetry
+    description: Detection signal for Network Telemetry
+    entities:
+    - NetworkConnection
+    - Host
+    id: sig-001
+    methodology: Behavioural
+    name: Network Telemetry
+    severity: Medium
+    uuid: 71ca9318-1b9f-479b-87ff-eb5491a63c2f
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::File Events
+      requirements: Requires siem::File Events telemetry
+    description: Detection signal for File System Telemetry
+    entities:
+    - File
+    - Host
+    id: sig-002
+    methodology: Behavioural
+    name: File System Telemetry
+    severity: Medium
+    uuid: 45ecae8c-226c-4e8f-b38b-ed5efd835be9
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::Authentication Events
+      requirements: Requires siem::Authentication Events telemetry
+    description: Detection signal for Authentication Telemetry
+    entities:
+    - User
+    - Host
+    id: sig-003
+    methodology: Behavioural
+    name: Authentication Telemetry
+    severity: Medium
+    uuid: 083665b3-c178-441c-b4f9-c110f8ccce6f
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::Script Execution Events
+      requirements: Requires siem::Script Execution Events telemetry
+    description: Detection signal for Script Engine Telemetry
+    entities:
+    - Process
+    - ScriptExecution
+    - Host
+    id: sig-004
+    methodology: Behavioural
+    name: Script Engine Telemetry
+    severity: Medium
+    uuid: a7e1955e-8d5e-4a83-af15-4d0f58932d43
+  - data:
+      availability: Unknown
+      logsources:
+      - mde::Microsoft Defender XDR
+      requirements: Requires mde::Microsoft Defender XDR telemetry
+    description: Detection signal for Defender for Endpoint Query
+    entities:
+    - Process
+    - Host
+    id: sig-005
+    methodology: Behavioural
+    name: Defender for Endpoint Query
+    severity: Medium
+    uuid: b0d6f8b4-a427-45dc-bfb2-0ebf9876991a
+  threats:
+  - 287a3286-3018-4b89-a0f8-899b66f5435d
+  type: Threat
+tvm_ref: tvm_t1059_003
