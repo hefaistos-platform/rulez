@@ -1,0 +1,21 @@
+criticality: Medium
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-07T09:29:10.098024+00:00'
+  modified: '2026-04-08T16:57:52.553239+00:00'
+  schema: tvm::2.1
+  tlp: AMBER
+  uuid: 4abfe71f-150f-480c-9ce4-f3df2193ffa4
+  version: 1
+name: tvm_t1562_008
+threat:
+  att&ck:
+  - T1562.008
+  description: '[Prod] [JPH] AKS - Stopped Logging'
+  impact: []
+  leverage: []
+  severity: Substantial incident
+  terrain: Alert allways when no log i send longer than 15 minutes.
+  viability: Roughly even chance

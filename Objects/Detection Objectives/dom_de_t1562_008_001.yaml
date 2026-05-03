@@ -1,0 +1,36 @@
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-07T09:29:10.098024+00:00'
+  modified: '2026-04-08T16:57:52.553239+00:00'
+  schema: dom::2.1
+  tlp: AMBER
+  uuid: 2f9ed298-f3c9-4308-8323-d5f2223ca2d0
+  version: 1
+name: dom_de_t1562_008_001
+objective:
+  composition:
+    description: Single signal detection - standalone implementation
+    strategy: Independent
+  description: '[Prod] [JPH] AKS - Stopped Logging'
+  priority: Medium
+  signals:
+  - data:
+      availability: Unknown
+      logsources:
+      - mde::Microsoft Defender XDR
+      requirements: Requires mde::Microsoft Defender XDR telemetry
+    description: Detection signal for Defender for Endpoint Query
+    entities:
+    - Process
+    - Host
+    id: sig-001
+    methodology: Behavioural
+    name: Defender for Endpoint Query
+    severity: Medium
+    uuid: bdd18fb5-d8d1-42f0-a05f-5f2355947aee
+  threats:
+  - 4abfe71f-150f-480c-9ce4-f3df2193ffa4
+  type: Threat
+tvm_ref: tvm_t1562_008
