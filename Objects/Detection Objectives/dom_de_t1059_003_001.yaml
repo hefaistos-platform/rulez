@@ -3,7 +3,7 @@ metadata:
     name: hunt3r
     organisation: HUNT3R
   created: '2026-04-08T08:10:56.405527+00:00'
-  modified: '2026-05-03T10:32:08.558271+00:00'
+  modified: '2026-05-03T12:14:45.862261+00:00'
   schema: dom::2.1
   tlp: AMBER+STRICT
   uuid: 69fc60a8-7331-40fc-a3c3-6773fde024cd
@@ -29,7 +29,7 @@ objective:
     methodology: Behavioural
     name: Network Telemetry
     severity: Medium
-    uuid: 69e41b63-c2c7-4f90-b922-e67bf9cb2bf4
+    uuid: 92e3782a-49d9-40fd-a46d-d886c734e869
   - data:
       availability: Unknown
       logsources:
@@ -43,7 +43,7 @@ objective:
     methodology: Behavioural
     name: File System Telemetry
     severity: Medium
-    uuid: 8e355b35-d51b-4037-93f9-6d8c45533237
+    uuid: 26592651-c251-4809-be3a-9543dd0f736b
   - data:
       availability: Unknown
       logsources:
@@ -57,7 +57,7 @@ objective:
     methodology: Behavioural
     name: Authentication Telemetry
     severity: Medium
-    uuid: e77e25cf-7297-42d5-9f94-83fbd9ab68cf
+    uuid: 02d2d7f1-a5d4-4c5a-b8c7-3f5d63e46e06
   - data:
       availability: Unknown
       logsources:
@@ -72,7 +72,7 @@ objective:
     methodology: Behavioural
     name: Script Engine Telemetry
     severity: Medium
-    uuid: 157f0e53-2198-4aa3-94e9-773a97f23a3d
+    uuid: afdedbc1-153d-4a59-b482-0a92344b00ed
   - data:
       availability: Unknown
       logsources:
@@ -86,7 +86,7 @@ objective:
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 6d3fe444-5945-4e57-9b1a-66942b2c0eec
+    uuid: 76ea779e-baf4-4658-b841-a979791c6a1d
   threats:
   - 287a3286-3018-4b89-a0f8-899b66f5435d
   type: Threat
