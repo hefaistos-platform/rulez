@@ -1,0 +1,22 @@
+criticality: Medium
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-07T09:26:44.213926+00:00'
+  modified: '2026-04-09T10:05:28.522481+00:00'
+  schema: tvm::2.1
+  tlp: AMBER
+  uuid: e538df70-9c5b-403e-a096-3f0bbd6b92ce
+  version: 1
+name: tvm_t1070
+threat:
+  att&ck:
+  - T1070
+  description: '[Prod][JPH][eSeL] Kriticka manipulace s AUDIT'
+  impact: []
+  leverage: []
+  severity: Substantial incident
+  terrain: Hledá přímé shody s kódy pro mazání nebo změnu nastavení auditu v poli
+    typUdalosti.
+  viability: Roughly even chance

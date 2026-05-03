@@ -1,0 +1,58 @@
+configurations:
+  defender_for_endpoint:
+    alert:
+      category: Suspicious Activity
+      severity: Medium
+      techniques:
+      - T1070
+      title: '[Prod][JPH][eSeL] Kriticka manipulace s AUDIT'
+    impacted_entities:
+      device: DeviceName
+    query: |-
+      // ============================================
+      // Rule Metadata
+      // ============================================
+      // Author: hunt3r
+      // Rule name: [Prod][JPH][eSeL] Kriticka manipulace s AUDIT
+      // ID: a42ad61f-9027-4f3c-aaf2-2a30f2d93725
+      // Severity: MEDIUM
+      // Status: DEPLOYED
+      // MITRE technique: T1070
+      // ============================================
+
+      // tags: detect::audit, kql, esel, t1070, detect::auditcleared
+      // MITRE ATT&CK: TA0005 (Defense Evasion), T1070 (Indicator Removal on Host)
+      // MITRE Engage: EAC0001 (Control - Monitoring)
+      // D3FEND: D3-AL (Audit Logging)
+      ContainerLogV2
+      | extend LogData = parse_json(tostring(LogMessage))
+      | extend InnerMsg = parse_json(tostring(LogData.message))
+      | where InnerMsg.typUdalosti in ("SMAZANI_AUDITNICH_ZAZNAMU", "ZMENA_NASTAVENI_AUDITU")
+      | project TimeGenerated,
+          User = tostring(InnerMsg.uzivatelskeJmenoUctu),
+          Operation = tostring(InnerMsg.typUdalosti),
+          SourceIP = tostring(InnerMsg.ipAdresaZdroje)
+    scheduling: 1H
+    schema: defender_for_endpoint::2.0
+    scope:
+      selection: All
+    status: PRODUCTION
+description: '[Prod][JPH][eSeL] Kriticka manipulace s AUDIT'
+dom_ref: dom_de_t1070_001
+metadata:
+  author:
+    name: hunt3r
+    organisation: HUNT3R
+  created: '2026-04-07T09:26:44.213926+00:00'
+  modified: '2026-04-09T10:05:28.522481+00:00'
+  schema: mdr::2.1
+  tlp: AMBER
+  uuid: 21a44c80-b8df-4bf8-84c2-c0d00aa9ae15
+  version: 1
+name: mdr_de_t1070_001
+platforms:
+- Windows
+response:
+  alert_severity: MEDIUM
+targets:
+- Endpoints
