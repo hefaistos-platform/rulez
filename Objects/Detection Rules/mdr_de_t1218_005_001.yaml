@@ -1,0 +1,351 @@
+configurations:
+  defender_for_endpoint:
+    alert:
+      category: Suspicious Activity
+      description: Detect malicious use of HTA with javascript
+      severity: High
+      techniques:
+      - T1218.005
+      title: T1218.005 - MSHTA JS Context
+    impacted_entities:
+      device: DeviceId
+    query: |-
+      // ============================================
+      // Rule Metadata
+      // ============================================
+      // Author: hunt3r
+      // Rule name: T1218.005 - MSHTA JS Context
+      // ID: d9bf896b-ca00-44cd-a1fb-a57e95a0d2a0
+      // Severity: HIGH
+      // Status: DEPLOYED
+      // MITRE technique: T1218.005
+      // ============================================
+
+      let timeframe = 14d;
+      let script_ext = dynamic(["hta","sct","js","vbs","jse","vbe","wsf","wsc","ps1","msh"]);
+      let suspicious_mshta = DeviceProcessEvents
+      | where Timestamp >= ago(timeframe)
+      | where FileName =~ "mshta.exe" or InitiatingProcessFileName =~ "mshta.exe"
+      | extend ProcCmd = tostring(ProcessCommandLine),
+               ParentCmd = tostring(InitiatingProcessCommandLine),
+               ProcName = tostring(FileName),
+               ParentName = tostring(InitiatingProcessFileName),
+               EffectiveCmd = iff(FileName =~ "mshta.exe", ProcCmd, ParentCmd)
+      | where isnotempty(EffectiveCmd)
+      | extend EffectiveCmd_l = tolower(EffectiveCmd)
+      | extend HasInlineScheme = EffectiveCmd_l matches regex @"\b(?:javascript|vbscript)\s*:",
+               HasExecFunction = EffectiveCmd_l matches regex @"(?:eval\s*\(|getobject\s*\()",
+               HasRemoteUrl = EffectiveCmd_l matches regex @"https?://",
+               HasRemoteScriptExt = EffectiveCmd_l matches regex @"https?://[^\s""']+\.(?:hta|sct|js|vbs|jse|vbe|wsf|wsc|ps1|msh)(?:\b|[?#])",
+               HasAboutBlankChain = EffectiveCmd_l matches regex @"about:\s*<",
+               HasScriptMoniker = EffectiveCmd_l matches regex @"(?:script:|mshtml,|runhtmlapplication)"
+      | where (HasInlineScheme and (HasExecFunction or HasAboutBlankChain or HasScriptMoniker))
+          or (HasRemoteUrl and (HasRemoteScriptExt or HasExecFunction))
+      | where not(EffectiveCmd_l matches regex @"\\windows\\help\\")
+      | where not(EffectiveCmd_l matches regex @"\b(?:hh\.exe|help(?:pane|ctr)?\.exe)\b")
+      | extend DetectionReason = case(
+                  HasInlineScheme and HasExecFunction, "Inline javascript/vbscript with eval/GetObject",
+                  HasInlineScheme and HasAboutBlankChain, "Inline javascript/vbscript with about:< content",
+                  HasInlineScheme and HasScriptMoniker, "Inline javascript/vbscript with script moniker/runhtmlapplication",
+                  HasRemoteUrl and HasRemoteScriptExt, "Remote URL invoking script/HTA content",
+                  HasRemoteUrl and HasExecFunction, "Remote URL with eval/GetObject",
+                  "Suspicious mshta invocation"
+               )
+      | extend MITRETechnique = "T1218.005",
+               MITRETactic = "Defense Evasion",
+               MITRESubTechnique = "System Binary Proxy Execution: Mshta"
+      | project Timestamp, DeviceName, DeviceId, AccountName, AccountDomain, AccountSid,
+                ProcName, ProcessId, ProcCmd, ParentName, ParentCmd,
+                InitiatingProcessAccountName, InitiatingProcessAccountDomain, InitiatingProcessId,
+                FolderPath, SHA1, MD5, ProcessIntegrityLevel, ProcessTokenElevation,
+                DetectionReason, MITRETechnique, MITRETactic, MITRESubTechnique;
+      suspicious_mshta
+      | order by Timestamp desc
+    scheduling: 1H
+    schema: defender_for_endpoint::2.0
+    scope:
+      selection: All
+    status: PRODUCTION
+  splunk:
+    query: |-
+      # ============================================
+      # Rule Metadata
+      # ============================================
+      # Author: hunt3r
+      # Rule name: T1218.005 - MSHTA JS Context
+      # ID: 0b88fae8-35bf-47ad-9ae9-21b10e5f54ca
+      # Severity: MEDIUM
+      # Status: IDEA
+      # MITRE technique: T1218.005
+      # ============================================
+
+      index=<your_sysmon_index> sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational EventCode=1 earliest=-7d
+      | where Image="*\\mshta.exe"
+      # Detect MSHTA executing suspicious JavaScript/VBScript schemes or remote payloads
+      | where (
+          # Detect inline script execution via javascript/vbscript schemes with common execution functions
+          (CommandLine="*javascript:*" OR CommandLine="*vbscript:*") AND (CommandLine="*eval(*" OR CommandLine="*GetObject(*")
+      )
+      OR (
+          # Detect remote script execution via HTTP(S) URLs
+          (CommandLine="*http://*" OR CommandLine="*https://*") AND (
+              # Look for common script file extensions in the URL (case-insensitive)
+              match(CommandLine, "(?i)\\.(hta|sct|js|vbs|jse|vbe|wsf|wsc|ps1|msh)")
+              OR
+              # Or look for common execution functions even if no explicit file extension is present
+              (CommandLine="*eval(*" OR CommandLine="*GetObject(*")
+          )
+      )
+      # Exclude known false positives. This section requires tuning for your specific environment.
+      # Example: | where NOT (CommandLine="*C:\\Program Files\\MyLegitApp\\help.hta*")
+      # Example: | where NOT (User="*service_account_for_legacy_app*")
+      # Add specific exclusions below based on your organizational data
+      # | where NOT (...)
+      | eval id="5c3f9a7d-e2b1-4c0a-8d6f-1e7b5c9d2a3f" # Unique UUID for this detection
+      | eval detection_name="T1218.005 - MSHTA JS Context"
+      | eval mitre_technique_id="T1218.005"
+      | eval mitre_technique_name="System Binary Proxy Execution: Mshta"
+      | eval author="hunt3r"
+      | eval description="Detects suspicious Mshta.exe execution involving JavaScript/VBScript schemes or remote HTTP(S) payloads, indicative of proxy execution. Based on AN1397."
+      | table _time, host, User, Domain, Image, CommandLine, ProcessId, ParentImage, ParentCommandLine, ParentProcessId, SHA1, id, detection_name, mitre_technique_id, mitre_technique_name, author, description
+  wazuh:
+    rule: |-
+      <!--
+      ============================================
+      Rule Metadata
+      ============================================
+      Author: hunt3r
+      Rule name: T1218.005 - MSHTA JS Context
+      ID: df87be3e-5980-4ee5-b9ba-b7f7656e3761
+      Severity: MEDIUM
+      Status: IDEA
+      MITRE technique: T1218.005
+      ============================================
+      -->
+
+      <rule id="a0e3f2d1-c7b8-4e9a-9f0d-1e2f3a4b5c6d" level="12">
+        <if_sid>60103</if_sid> <!-- Sysmon Event 1: Process Creation -->
+        <field name="win.eventdata.image" type="pcreg2">\mshta\.exe</field>
+        <options>nocase</options>
+        <description>
+          T1218.005 - MSHTA JS Context - System Binary Proxy Execution: Mshta.
+          Detects suspicious Mshta.exe execution involving JavaScript/VBScript schemes
+          or remote HTTP(S) payloads, indicative of proxy execution.
+          This rule specifically looks for:
+          1. Inline script execution via 'javascript:' or 'vbscript:' schemes,
+             containing execution functions like 'eval()' or 'GetObject()'.
+          2. Remote script fetching via 'http://' or 'https://' URLs,
+             either referencing common script file extensions (.hta, .sct, .js, etc.)
+             or containing execution functions like 'eval()' or 'GetObject()'.
+          Implemented based on Detecting Mshta-based Proxy Execution via Suspicious HTA or Script Invocation (AN1397).
+        </description>
+        <group>attack,command_execution,mshta,t1218_005,defense_evasion,proxy_execution</group>
+        <mitre>
+          <id>T1218.005</id>
+          <tactic>Defense Evasion</tactic>
+          <technique>System Binary Proxy Execution</technique>
+          <subtechnique>Mshta</subtechnique>
+        </mitre>
+        <field name="win.eventdata.commandLine" type="pcreg2" condition="and">
+          <!-- Condition 1: Inline script execution (javascript:/vbscript: + eval()/GetObject()) -->
+          (?:(?:javascript|vbscript):[^"\s]*?(?:eval\(|GetObject\()))
+          |
+          <!-- Condition 2: Remote script execution (http/https:// + (script extension or eval()/GetObject())) -->
+          (?:(?:http|https):\/\/[^\s]*?(?:(?:(?:\.(?:hta|sct|js|vbs|jse|vbe|wsf|wsc|ps1|msh)\b)|(?:[^"\s]*?(?:eval\(|GetObject\()))))
+        </field>
+        <options>nocase</options>
+
+        <!-- False Positive Exclusions (uncomment and modify as needed for your environment): -->
+        <!-- Exclude specific legitimate applications or help files that use mshta.exe benignly. -->
+        <!-- <field name="win.eventdata.commandLine" type="pcreg2" negate="yes">legitimate_app_path\\helpfile\.hta</field> -->
+        <!-- <field name="win.eventdata.parentCommandLine" type="pcreg2" negate="yes">trusted_process_name\.exe</field> -->
+      </rule>
+description: Detect malicious use of HTA with javascript
+metadata:
+  author: hunt3r (HUNT3R)
+  created: '2026-03-31T13:40:34.703371+00:00'
+  modified: '2026-05-05T10:15:40.474417+00:00'
+  schema: mdr::2.1
+  tlp: amber
+  uuid: 9b730cdd-d45f-4a58-9071-def45ff18940
+  version: 1
+name: mdr_de_t1218_005_001
+response:
+  alert_severity: High
+  alert_trigger: Triggered when the Detection Logic condition is met.
+  false_positives: |-
+    - Admin or users applications, help files
+    - Old files from legacy applications
+  playbook: |-
+    ## 1. Triage
+
+    1. **Acknowledge & scope the alert**
+       - Record alert metadata: timestamp, host, user, process name/path, command line, parent process, and network indicators (URL/domain/IP).
+       - Identify whether this is the specific pattern: **`mshta.exe` executing JavaScript and fetching remote content** (e.g., `javascript:`, `mshta http(s)://...`, `GetObject`, remote `.sct/.hta`/script URLs).
+
+    2. **Confirm true positive**
+       - On the affected host, verify the execution chain:
+         - Check **process tree**: parent → `mshta.exe` → any child processes.
+         - Confirm whether `mshta.exe` command line contains suspicious components:
+           - `mshta.exe http(s)://...` (remote fetch)
+           - `mshta.exe javascript:...` or `mshta.exe vbscript:...`
+           - script variables/keywords consistent with payload staging (e.g., `GetObject`, `eval`, `ActiveXObject` patterns).
+       - Identify follow-on activity:
+         - Look for **unexpected child processes** spawned shortly after mshta execution (examples: `cmd.exe`, `powershell.exe`, `wscript.exe`, `cscript.exe`, `rundll32.exe`, `regsvr32.exe`, `certutil.exe`, `bitsadmin.exe`, `msiexec.exe`, or other LOLBins).
+       - Validate payload retrieval:
+         - If network logs are available, confirm **outbound HTTP(S) from mshta** to an external domain matching the command line/alert.
+         - If available, confirm downloaded content hashes/URLs and whether it matches known benign applications.
+
+    3. **Gather immediate context (evidence collection)**
+       - Collect on host:
+         - `mshta.exe` full command line, working directory, file path (if any), and process IDs.
+         - Parent process command line and user context.
+         - Windows event context where available (e.g., process creation logs).
+       - Collect network artifacts:
+         - Destination domains/IPs, URLs, request timestamps, user-agent if logged, and response status.
+       - Collect persistence indicators (quick scan):
+         - Recent scheduled tasks, services, run keys, startup folder entries created in the window around the alert.
+         - New/modified scripts/binaries in user profile or temp directories (especially those created shortly after the mshta process).
+
+    4. **Assess impact and priority**
+       - **High severity** if any of the following are observed:
+         - mshta spawned a **command interpreter** or any suspicious LOLBIN.
+         - Clear evidence of **remote payload fetch + execution**.
+         - Multiple hosts/users impacted, or lateral movement signals.
+       - **Lower severity** (but still investigate) if:
+         - mshta executed a local/internal HTA without remote fetch and no suspicious children.
+         - The activity matches known admin/user tooling patterns (still verify).
+
+    5. **Check known false positives**
+       - Determine whether the mshta execution corresponds to:
+         - Help files, admin tools, legacy applications.
+       - Whitelist verification:
+         - If allowed by policy, compare command line characteristics to known benign baselines (paths/domains/arguments).
+       - If the alert is consistent with remote JavaScript retrieval, treat as malicious until proven otherwise.
+
+    ---
+
+    ## 2. Containment
+
+    1. **Isolate the host quickly**
+       - If the alert is confirmed malicious (remote payload fetch and/or suspicious children), **disable network access** for the affected endpoint:
+         - Prefer using EDR containment (isolate host).
+         - If EDR isn’t available, temporarily block outbound/inbound connections at the host firewall or upstream network controls.
+
+    2. **Terminate malicious activity safely**
+       - Stop the `mshta.exe` process and any child processes associated with it.
+       - If you detect a downloader stage:
+         - Identify the likely payload/spawned process lineage and terminate the full chain.
+
+    3. **Prevent reinfection**
+       - If persistence indicators are found during triage:
+         - Disable the newly created scheduled tasks/services/run keys immediately.
+         - Quarantine the newly dropped executables/scripts (do not delete immediately if you need forensic evidence; quarantine is preferred).
+
+    4. **Preserve evidence**
+       - Ensure volatile evidence is captured before termination:
+         - Keep process command lines, network connections, and any dumped script/payload artifacts available in tooling.
+       - Snapshot/collect if your environment supports it:
+         - Disk snapshot or forensic image for high-severity incidents.
+
+    5. **Threat hunt for related activity (scope containment decision)**
+       - Search across endpoints for:
+         - `mshta.exe` executions with `http://` or `https://` in the command line.
+         - `javascript:` usage with mshta.
+         - Known malicious domains/URLs from the alert.
+         - Similar parent processes or the same initiating user account.
+
+    ---
+
+    ## 3. Eradication
+
+    1. **Remove malicious payloads and artifacts**
+       - Identify payload source locations:
+         - Temporary downloads, user profile temp folders, `%AppData%`, `%LocalAppData%`, `%TEMP%`.
+       - Quarantine the malicious files (scripts/executables) and any loader components.
+       - Remove persistence mechanisms:
+         - Scheduled tasks, Run/RunOnce registry keys, services, WMI subscriptions, startup folder entries, and browser/Office add-ins if observed.
+
+    2. **Eliminate attacker execution context**
+       - Confirm there are no remaining processes spawned by the malicious chain.
+       - Review for additional PowerShell/cmd/script activity in the same timeframe and remediate accordingly.
+
+    3. **Reset potentially compromised credentials (conditional)**
+       - If the execution led to credential access, password dumping, or if the user account is suspicious:
+         - Force password reset for affected users (and any accounts used by the compromised host).
+         - Revoke sessions/tokens as per org policy.
+
+    4. **Patch/secure the initial vector (if known)**
+       - If the initial trigger is phishing, document-driven execution, or web-delivered content:
+         - Confirm the delivered file and ensure it is removed from shares.
+         - Block the hosting domain/URL.
+       - If this is part of an internal app/legit workflow:
+         - Verify and adjust detection logic (do not remove controls without confirming business impact).
+
+    ---
+
+    ## 4. Recovery
+
+    1. **Restore connectivity safely**
+       - Gradually re-enable network connectivity after:
+         - The suspicious processes are gone.
+         - Persistence is removed.
+         - No further suspicious activity is present in monitoring.
+       - Monitor for renewed `mshta.exe` launches from the same user/host.
+
+    2. **Validate system integrity**
+       - Verify:
+         - No new unauthorized scheduled tasks/services remain.
+         - No unexpected startup items exist.
+         - System returns to baseline performance and behavior.
+       - If you captured IOCs (hashes, URLs, domains), confirm they are not reappearing.
+
+    3. **Confirm detection effectiveness**
+       - Ensure the host logs continue to capture process creation and command line details (important for mshta detections).
+       - Validate alert pipeline health:
+         - Are alerts still firing for new events?
+         - Are telemetry gaps present?
+
+    4. **Communicate incident status**
+       - Notify stakeholders:
+         - Confirm eradication success criteria and monitoring window.
+         - Provide timeline summary and any user impact.
+
+    ---
+
+    ## 5. Post-Incident
+
+    1. **Root cause & timeline**
+       - Document:
+         - How the adversary likely initiated `mshta.exe` (initial access vector).
+         - Exact command line and remote URLs used.
+         - Payload execution sequence and resulting child processes.
+
+    2. **Detection improvements**
+       - Reduce false positives while increasing fidelity:
+         - Enrich with additional command line and script-engine indicators:
+           - `javascript:` and `GetObject`/`eval` style patterns
+           - presence of external `http(s)` URL arguments in mshta command line
+           - correlation with suspicious parent processes (e.g., Office apps, scripting hosts, downloaders)
+         - Add allowlisting only for verified benign paths/known admin tools (avoid broad allowlists).
+       - Add analytics to cover coverage gaps:
+         - Network correlation: mshta process → outbound request to remote script payload.
+         - Correlate mshta execution with subsequent process creations within a short window.
+
+    3. **Hunting and retrospective review**
+       - Search historical data for the same IOCs:
+         - Domains/URLs from the alert.
+         - Command line substrings (`mshta`, `javascript:`, remote URL indicators).
+       - Identify whether this was isolated or part of a broader campaign.
+
+    4. **Operational hardening recommendations**
+       - Consider policy controls aligned to your environment:
+         - Application control (e.g., allow mshta only where needed).
+         - Restrict outbound access from endpoints (where feasible).
+         - EDR rules to block or flag `mshta.exe` remote script usage by default.
+
+    5. **Lessons learned & action items**
+       - Capture what worked/failed:
+         - Triage speed, containment effectiveness, evidence completeness, and detection accuracy.
+       - Assign action items with owners and deadlines:
+         - Telemetry gaps, allowlist validation, improved correlation logic, and playbook updates.

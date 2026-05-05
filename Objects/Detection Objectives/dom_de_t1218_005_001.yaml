@@ -1,0 +1,104 @@
+metadata:
+  author: hunt3r (HUNT3R)
+  created: '2026-03-31T13:40:34.703371+00:00'
+  modified: '2026-05-05T10:15:40.474417+00:00'
+  schema: dom::2.1
+  tlp: amber
+  uuid: 0adc14ec-45b4-4f02-acc3-a82825a557d8
+  version: 1
+name: dom_de_t1218_005_001
+objective:
+  composition:
+    description: Combined detection using 6 coordinated signals
+    strategy: Combined
+  description: Detect malicious use of HTA with javascript
+  priority: High
+  signals:
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::Network Logs
+      requirements: Requires siem::Network Logs telemetry
+    description: Detection signal for Network Telemetry
+    entities:
+    - network::IP Address
+    - host::Hostname
+    id: sig-001
+    methodology: Behavioural
+    name: Network Telemetry
+    severity: Medium
+    uuid: 190fc920-a5bb-452b-b7d1-e3f35d535c01
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::File Events
+      requirements: Requires siem::File Events telemetry
+    description: Detection signal for File System Telemetry
+    entities:
+    - host::Process
+    - host::Hostname
+    id: sig-002
+    methodology: Behavioural
+    name: File System Telemetry
+    severity: Medium
+    uuid: df3bc20d-c1c8-4a1b-a8e0-b3f9d6726621
+  - data:
+      availability: Unknown
+      logsources:
+      - siem::Script Execution Events
+      requirements: Requires siem::Script Execution Events telemetry
+    description: Detection signal for Script Engine Telemetry
+    entities:
+    - host::Process
+    - host::Command Line
+    - host::Hostname
+    id: sig-003
+    methodology: Behavioural
+    name: Script Engine Telemetry
+    severity: Medium
+    uuid: e77436eb-4575-400e-adc9-1fd117a8d6d2
+  - data:
+      availability: Unknown
+      logsources:
+      - mde::Microsoft Defender XDR
+      requirements: Requires mde::Microsoft Defender XDR telemetry
+    description: Detection signal for Defender for Endpoint Query
+    entities:
+    - host::Process
+    - host::Hostname
+    id: sig-004
+    methodology: Behavioural
+    name: Defender for Endpoint Query
+    severity: Medium
+    uuid: 6f2dc964-a8dc-4103-bf86-42fd6bcf0667
+  - data:
+      availability: Unknown
+      logsources:
+      - splunk::Splunk
+      requirements: Requires splunk::Splunk telemetry
+    description: Detection signal for Splunk Search Query
+    entities:
+    - host::Hostname
+    id: sig-005
+    methodology: Behavioural
+    name: Splunk Search Query
+    severity: Medium
+    uuid: 6aff7663-1900-4e1f-a874-05a42bccc5a0
+  - data:
+      availability: Unknown
+      logsources:
+      - wazuh::Wazuh SIEM
+      requirements: Requires wazuh::Wazuh SIEM telemetry
+    description: Detection signal for Wazuh Rule
+    entities:
+    - host::Hostname
+    id: sig-006
+    methodology: Behavioural
+    name: Wazuh Rule
+    severity: Medium
+    uuid: 710b0189-e5d8-401e-8cd2-c1632dc2628c
+  threats:
+  - e40c4c92-a29f-45d9-a1ae-9b094611a6a8
+  type: Threat
+validation:
+  robustness_level: 3
