@@ -27,7 +27,7 @@ objective:
     methodology: Behavioural
     name: Network Telemetry
     severity: Medium
-    uuid: 190fc920-a5bb-452b-b7d1-e3f35d535c01
+    uuid: f6b5e959-aa69-40d2-9f97-debead6af5a7
   - data:
       availability: Unknown
       logsources:
@@ -41,7 +41,7 @@ objective:
     methodology: Behavioural
     name: File System Telemetry
     severity: Medium
-    uuid: df3bc20d-c1c8-4a1b-a8e0-b3f9d6726621
+    uuid: 1049d6fd-de0a-4860-b5ea-d7345965a241
   - data:
       availability: Unknown
       logsources:
@@ -56,7 +56,7 @@ objective:
     methodology: Behavioural
     name: Script Engine Telemetry
     severity: Medium
-    uuid: e77436eb-4575-400e-adc9-1fd117a8d6d2
+    uuid: 095d7700-4b65-442a-9aec-df0d034cb638
   - data:
       availability: Unknown
       logsources:
@@ -70,7 +70,7 @@ objective:
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 6f2dc964-a8dc-4103-bf86-42fd6bcf0667
+    uuid: 50387428-a469-44fd-8e1c-e8391f21a836
   - data:
       availability: Unknown
       logsources:
@@ -83,7 +83,7 @@ objective:
     methodology: Behavioural
     name: Splunk Search Query
     severity: Medium
-    uuid: 6aff7663-1900-4e1f-a874-05a42bccc5a0
+    uuid: 73a9d3e2-1a11-4b46-a5a6-b4700e2f76a9
   - data:
       availability: Unknown
       logsources:
@@ -96,7 +96,7 @@ objective:
     methodology: Behavioural
     name: Wazuh Rule
     severity: Medium
-    uuid: 710b0189-e5d8-401e-8cd2-c1632dc2628c
+    uuid: c2499756-facb-42eb-88c1-db8eccb998d7
   threats:
   - e40c4c92-a29f-45d9-a1ae-9b094611a6a8
   type: Threat
