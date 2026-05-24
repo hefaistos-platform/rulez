@@ -1,7 +1,7 @@
 metadata:
   author: hunt3r (HUNT3R)
   created: '2026-03-31T13:40:34.703371+00:00'
-  modified: '2026-05-05T10:15:40.474417+00:00'
+  modified: '2026-05-21T18:23:02.268692+00:00'
   schema: dom::2.1
   tlp: amber
   uuid: 0adc14ec-45b4-4f02-acc3-a82825a557d8
@@ -9,7 +9,7 @@ metadata:
 name: dom_de_t1218_005_001
 objective:
   composition:
-    description: Combined detection using 6 coordinated signals
+    description: Combined detection using 4 coordinated signals
     strategy: Combined
   description: Detect malicious use of HTA with javascript
   priority: High
@@ -27,36 +27,7 @@ objective:
     methodology: Behavioural
     name: Network Telemetry
     severity: Medium
-    uuid: f6b5e959-aa69-40d2-9f97-debead6af5a7
-  - data:
-      availability: Unknown
-      logsources:
-      - siem::File Events
-      requirements: Requires siem::File Events telemetry
-    description: Detection signal for File System Telemetry
-    entities:
-    - host::Process
-    - host::Hostname
-    id: sig-002
-    methodology: Behavioural
-    name: File System Telemetry
-    severity: Medium
-    uuid: 1049d6fd-de0a-4860-b5ea-d7345965a241
-  - data:
-      availability: Unknown
-      logsources:
-      - siem::Script Execution Events
-      requirements: Requires siem::Script Execution Events telemetry
-    description: Detection signal for Script Engine Telemetry
-    entities:
-    - host::Process
-    - host::Command Line
-    - host::Hostname
-    id: sig-003
-    methodology: Behavioural
-    name: Script Engine Telemetry
-    severity: Medium
-    uuid: 095d7700-4b65-442a-9aec-df0d034cb638
+    uuid: abf480f5-d67e-4cb8-be92-b96c1a7120ca
   - data:
       availability: Unknown
       logsources:
@@ -66,11 +37,11 @@ objective:
     entities:
     - host::Process
     - host::Hostname
-    id: sig-004
+    id: sig-002
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 50387428-a469-44fd-8e1c-e8391f21a836
+    uuid: a1558af7-a7b6-4aef-b229-ef2b46026252
   - data:
       availability: Unknown
       logsources:
@@ -79,11 +50,11 @@ objective:
     description: Detection signal for Splunk Search Query
     entities:
     - host::Hostname
-    id: sig-005
+    id: sig-003
     methodology: Behavioural
     name: Splunk Search Query
     severity: Medium
-    uuid: 73a9d3e2-1a11-4b46-a5a6-b4700e2f76a9
+    uuid: 81200838-2432-4e3d-8beb-5726dc5de4e5
   - data:
       availability: Unknown
       logsources:
@@ -92,11 +63,11 @@ objective:
     description: Detection signal for Wazuh Rule
     entities:
     - host::Hostname
-    id: sig-006
+    id: sig-004
     methodology: Behavioural
     name: Wazuh Rule
     severity: Medium
-    uuid: c2499756-facb-42eb-88c1-db8eccb998d7
+    uuid: 9267cac4-789e-48fc-a499-bc7213c4ed87
   threats:
   - e40c4c92-a29f-45d9-a1ae-9b094611a6a8
   type: Threat
