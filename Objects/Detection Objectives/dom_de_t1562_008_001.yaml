@@ -1,11 +1,9 @@
 metadata:
-  author:
-    name: hunt3r
-    organisation: HUNT3R
+  author: hunt3r (HUNT3R)
   created: '2026-04-07T09:29:10.098024+00:00'
   modified: '2026-04-08T16:57:52.553239+00:00'
   schema: dom::2.1
-  tlp: AMBER
+  tlp: amber
   uuid: 2f9ed298-f3c9-4308-8323-d5f2223ca2d0
   version: 1
 name: dom_de_t1562_008_001
@@ -23,14 +21,15 @@ objective:
       requirements: Requires mde::Microsoft Defender XDR telemetry
     description: Detection signal for Defender for Endpoint Query
     entities:
-    - Process
-    - Host
+    - host::Process
+    - host::Hostname
     id: sig-001
     methodology: Behavioural
     name: Defender for Endpoint Query
     severity: Medium
-    uuid: 54dbc0e1-dabb-48c1-96dc-6bf282f4d184
+    uuid: f6168393-bf84-4cb0-8fc0-b8d7b9a4fa96
   threats:
   - 4abfe71f-150f-480c-9ce4-f3df2193ffa4
   type: Threat
-tvm_ref: tvm_t1562_008
+validation:
+  robustness_level: 2

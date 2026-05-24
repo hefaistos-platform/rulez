@@ -37,21 +37,29 @@ configurations:
       selection: All
     status: PRODUCTION
 description: '[Prod] [JPH] AKS - Stopped Logging'
-dom_ref: dom_de_t1562_008_001
 metadata:
-  author:
-    name: hunt3r
-    organisation: HUNT3R
+  author: hunt3r (HUNT3R)
   created: '2026-04-07T09:29:10.098024+00:00'
   modified: '2026-04-08T16:57:52.553239+00:00'
   schema: mdr::2.1
-  tlp: AMBER
+  tlp: amber
   uuid: f571bc94-8757-4f25-9ce6-1a39c3625c33
   version: 1
 name: mdr_de_t1562_008_001
-platforms:
-- Windows
 response:
-  alert_severity: MEDIUM
-targets:
-- Endpoints
+  alert_severity: Medium
+  alert_trigger: Triggered when the Detection Logic condition is met.
+  false_positives: '- Maintenance muze mit za nasledek nedostupnost'
+  playbook: |-
+    **L1: **
+    1. Na základě alertu v MS Defender je vytvořen tiket v SD.
+    2. L1 dohled kontaktuje L2 SOC a spolupracuje na prověření alertu.
+    3. Na základě domluvy L1 dohled založí SPCSS – Bezpečnostní Hlášení a původní tiket mu podřadí. L1 dohled do BH doplní popis události a payload z offense.
+    4. L1 dohled telefonicky kontaktuje a spolupracuje na řešení s MKB.
+
+    **L2: **
+    Doplňující informace pro L2 SOC:
+    1. Přejděte na AKS klastr v portálu Azure.
+    2. Najděte příslušný AKS klastr.
+    3. Restartujte logování v Nastavení diagnostiky (Diagnostic Settings) -> upravit nastavení (zaškrtnout/odškrtnout) -> Uložit.
+    4. Zkontrolujte logování.
