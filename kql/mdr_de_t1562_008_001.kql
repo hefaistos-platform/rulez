@@ -1,0 +1,22 @@
+// ============================================
+// Rule Metadata
+// ============================================
+// Author: hunt3r
+// Rule name: [Prod] [JPH] AKS - Stopped Logging
+// ID: 3aa58fc8-84b6-4a6b-b553-fb66dab75a7d
+// Severity: MEDIUM
+// Status: DEPLOYED
+// MITRE technique: T1562.008
+// ============================================
+
+// tags: kql, esel, detect::aks, t1562.008
+// [Prod] [JPH] AKS - Stopped Logging
+// Detect assets that haven't sent a heartbeat in the last time period
+// Set the threshold based on your requirements (e.g., 30m, 1h, 4h)
+let Threshold = 15m;
+Heartbeat
+| summarize LastHeartbeat = max(TimeGenerated) by Computer, OSType, Category
+| where LastHeartbeat < ago(Threshold)
+| extend InactiveDuration = now() - LastHeartbeat
+| project Computer, LastHeartbeat, InactiveDuration, OSType, Category
+| order by InactiveDuration desc
