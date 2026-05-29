@@ -1,0 +1,111 @@
+// ============================================
+// Rule Metadata
+// ============================================
+// Author: hunt3r
+// Rule name: [Exp][JPH] IMPACKET - Combo Chain
+// ID: c4ee92ae-2fce-47bf-a8ef-7cd9463d7b13
+// Severity: CRITICAL
+// Status: IDEA
+// MITRE technique: T1133
+// ============================================
+
+let lookback = 1d;
+let correlationWindow = 5s;
+let suspiciousPorts = dynamic([135,445]);
+let adminToolAllowList = dynamic(["sccm","ansible"]);
+let suspiciousLogons =
+    SecurityEvent
+    | where TimeGenerated >= ago(lookback)
+    | where EventID == 4624
+    | where LogonType == 3
+    | extend SourceIp = coalesce(IpAddress, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="IpAddress")]["#text"]))
+    | extend TargetUser = coalesce(TargetUserName, Account)
+    | where isnotempty(SourceIp)
+    | where SourceIp !in ("-", "::1", "127.0.0.1")
+    | project LogonTime=TimeGenerated, Computer, SourceIp, TargetUser, LogonId=tostring(TargetLogonId), EventID;
+let serviceCreates =
+    SecurityEvent
+    | where TimeGenerated >= ago(lookback)
+    | where EventID in (7045, 4697)
+    | extend ServiceName = coalesce(ServiceName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="ServiceName")]["#text"]))
+    | extend ServiceFileName = coalesce(ServiceFileName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="ImagePath")]["#text"]))
+    | where isempty(ServiceName) or not(tolower(ServiceName) has_any (adminToolAllowList))
+    | project ArtifactTime=TimeGenerated, Computer, ArtifactType="ServiceCreate", ServiceName, ServiceFileName, EventID;
+let taskCreates =
+    SecurityEvent
+    | where TimeGenerated >= ago(lookback)
+    | where EventID == 4698
+    | extend TaskName = coalesce(TaskName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="TaskName")]["#text"]))
+    | extend TaskContent = tostring(parse_xml(EventData).EventData.Data[?(@.Name=="TaskContent")]["#text"])
+    | where isempty(TaskName) or not(tolower(TaskName) has_any (adminToolAllowList))
+    | project ArtifactTime=TimeGenerated, Computer, ArtifactType="TaskCreate", TaskName, TaskContent, EventID;
+let wmiProcessArtifacts =
+    DeviceProcessEvents
+    | where TimeGenerated >= ago(lookback)
+    | where FileName =~ "WmiPrvSE.exe"
+    | project ArtifactTime=TimeGenerated, Computer=DeviceName, ArtifactType="WmiPrvSEStart", InitiatingProcessFileName, FileName, ProcessCommandLine, ProcessId, InitiatingProcessId, ReportId;
+let ipcArtifacts =
+    union isfuzzy=true serviceCreates, taskCreates, wmiProcessArtifacts;
+let postExec =
+    DeviceProcessEvents
+    | where TimeGenerated >= ago(lookback)
+    | where FileName in~ ("cmd.exe","powershell.exe","pwsh.exe")
+    | extend ParentImage = InitiatingProcessFileName
+    | extend CmdLine = tostring(ProcessCommandLine)
+    | where
+        (
+            ParentImage in~ ("WmiPrvSE.exe","services.exe","taskeng.exe","taskhostw.exe","svchost.exe")
+            and (
+                CmdLine has_any (" /c "," -c "," /Q /c"," /q /c","powershell -c","pwsh -c")
+                or (FileName =~ "powershell.exe" and CmdLine has_any (" -enc "," -encodedcommand "))
+            )
+        )
+    | extend ModuleMatch =
+        case(
+            ParentImage =~ "WmiPrvSE.exe", "wmiexec.py",
+            ParentImage =~ "services.exe", "smbexec.py",
+            ParentImage in~ ("taskeng.exe","taskhostw.exe","svchost.exe"), "atexec.py",
+            "unknown"
+        )
+    | project ExecTime=TimeGenerated, Computer=DeviceName, FileName, CmdLine, ParentImage, ModuleMatch, ProcessId, InitiatingProcessId, AccountName=AccountName, ReportId;
+suspiciousLogons
+| join kind=innerunique (
+    ipcArtifacts
+) on Computer
+| where ArtifactTime between (LogonTime .. LogonTime + correlationWindow)
+| join kind=innerunique (
+    postExec
+) on Computer
+| where ExecTime between (LogonTime .. LogonTime + 2m)
+| extend PrepareScore = 10
+| extend IPCScore = 40
+| extend ExecScore = 50
+| extend RiskScore = PrepareScore + IPCScore + ExecScore
+| extend ToolFamily =
+    case(
+        ArtifactType == "WmiPrvSEStart" or ParentImage =~ "WmiPrvSE.exe", "wmiexec.py",
+        ArtifactType == "ServiceCreate" or ParentImage =~ "services.exe", "smbexec.py",
+        ArtifactType == "TaskCreate" or ParentImage in~ ("taskeng.exe","taskhostw.exe","svchost.exe"), "atexec.py",
+        ModuleMatch
+    )
+| extend MITRETechnique = "T1133"
+| project
+    TimeGenerated=ExecTime,
+    Computer,
+    SourceIp,
+    TargetUser,
+    LogonTime,
+    ArtifactTime,
+    ExecTime,
+    ToolFamily,
+    ArtifactType,
+    ParentImage,
+    FileName,
+    CmdLine,
+    ServiceName,
+    ServiceFileName,
+    TaskName,
+    TaskContent,
+    RiskScore,
+    MITRETechnique
+| order by RiskScore desc, TimeGenerated desc

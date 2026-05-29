@@ -1,0 +1,40 @@
+criticality: Critical
+metadata:
+  author: hunt3r (HUNT3R)
+  created: '2026-05-27T12:53:54.327080+00:00'
+  modified: '2026-05-28T13:35:56.496642+00:00'
+  schema: tvm::2.1
+  tlp: amber+strict
+  uuid: 75df0333-a71d-4850-8d39-6a1d4b3568dc
+  version: 1
+name: tvm_t1133
+references:
+  internal:
+    a: CASE-1288
+threat:
+  att&ck:
+  - T1133
+  description: Detect IMPACKET three modules in One
+  impact: []
+  leverage: []
+  severity: Highly significant incident
+  surface:
+  - OS::Windows
+  - Endpoint::Workstation
+  - Endpoint::Server
+  - host::Command Line
+  - host::Process
+  terrain: "Goal is to detect IMPACKET wmiexec.py, atexec.py and smbexec.py.\n\nTrigger\
+    \ 1 (Logon): EventID:4624 s LogonType:3 (Network) z podezřelé IP adresy.\n\nTrigger\
+    \ 2 (IPC/Service): Aktivita ve stejném časovém okně (např. 5 sekund) na jednom\
+    \ z těchto:\n\nEID:7045 (Service Creation)\n\nEID:4698 (Task Scheduler Creation)\n\
+    \nWmiPrvSE.exe (Process Creation)\n\nTrigger 3 (Post-Ex): Následné spuštění cmd.exe\
+    \ nebo powershell.exe s parametry -c nebo /c.\n\nPhase (Kill Chain) | Logical\
+    \ Condition | Weight (Risk Score)\nPrepare (Logon) | LogonType:3 AND SourceAccount:Remote\
+    \ | 10\nIPC Connect | EID:7045 OR EID:4698 OR Image:WmiPrvSE.exe | 40\nExecution\
+    \ (Pivot) | ParentProcess: (services.exe OR taskeng.exe OR WmiPrvSE.exe) | 50\n\
+    \nTool\t| Primary IPC\t| Main artefact\t| Detection signal (Logika)\nwmiexec.py\t\
+    | DCOM\t| WmiPrvSE.exe\t| Parent: WmiPrvSE.exe & Child: cmd.exe /Q /c\nsmbexec.py\t\
+    | SMB/SVCCTL\t| Service\tEID 7045 & ServiceName: random/temp\natexec.py\t| RPC/Task\t\
+    | Scheduled Task\t| EID 4698 + 4699 (Delta času < 100ms)"
+  viability: Roughly even chance

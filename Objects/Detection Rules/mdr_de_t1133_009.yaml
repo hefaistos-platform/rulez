@@ -1,0 +1,163 @@
+configurations:
+  defender_for_endpoint:
+    alert:
+      category: Suspicious Activity
+      description: Detect IMPACKET three modules in One
+      severity: High
+      techniques:
+      - T1133
+      title: '[Exp][JPH] IMPACKET - Combo Chain'
+    impacted_entities:
+      device: DeviceName
+    query: |-
+      // ============================================
+      // Rule Metadata
+      // ============================================
+      // Author: hunt3r
+      // Rule name: [Exp][JPH] IMPACKET - Combo Chain
+      // ID: c4ee92ae-2fce-47bf-a8ef-7cd9463d7b13
+      // Severity: CRITICAL
+      // Status: IDEA
+      // MITRE technique: T1133
+      // ============================================
+
+      let lookback = 1d;
+      let correlationWindow = 5s;
+      let suspiciousPorts = dynamic([135,445]);
+      let adminToolAllowList = dynamic(["sccm","ansible"]);
+      let suspiciousLogons =
+          SecurityEvent
+          | where TimeGenerated >= ago(lookback)
+          | where EventID == 4624
+          | where LogonType == 3
+          | extend SourceIp = coalesce(IpAddress, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="IpAddress")]["#text"]))
+          | extend TargetUser = coalesce(TargetUserName, Account)
+          | where isnotempty(SourceIp)
+          | where SourceIp !in ("-", "::1", "127.0.0.1")
+          | project LogonTime=TimeGenerated, Computer, SourceIp, TargetUser, LogonId=tostring(TargetLogonId), EventID;
+      let serviceCreates =
+          SecurityEvent
+          | where TimeGenerated >= ago(lookback)
+          | where EventID in (7045, 4697)
+          | extend ServiceName = coalesce(ServiceName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="ServiceName")]["#text"]))
+          | extend ServiceFileName = coalesce(ServiceFileName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="ImagePath")]["#text"]))
+          | where isempty(ServiceName) or not(tolower(ServiceName) has_any (adminToolAllowList))
+          | project ArtifactTime=TimeGenerated, Computer, ArtifactType="ServiceCreate", ServiceName, ServiceFileName, EventID;
+      let taskCreates =
+          SecurityEvent
+          | where TimeGenerated >= ago(lookback)
+          | where EventID == 4698
+          | extend TaskName = coalesce(TaskName, tostring(parse_xml(EventData).EventData.Data[?(@.Name=="TaskName")]["#text"]))
+          | extend TaskContent = tostring(parse_xml(EventData).EventData.Data[?(@.Name=="TaskContent")]["#text"])
+          | where isempty(TaskName) or not(tolower(TaskName) has_any (adminToolAllowList))
+          | project ArtifactTime=TimeGenerated, Computer, ArtifactType="TaskCreate", TaskName, TaskContent, EventID;
+      let wmiProcessArtifacts =
+          DeviceProcessEvents
+          | where TimeGenerated >= ago(lookback)
+          | where FileName =~ "WmiPrvSE.exe"
+          | project ArtifactTime=TimeGenerated, Computer=DeviceName, ArtifactType="WmiPrvSEStart", InitiatingProcessFileName, FileName, ProcessCommandLine, ProcessId, InitiatingProcessId, ReportId;
+      let ipcArtifacts =
+          union isfuzzy=true serviceCreates, taskCreates, wmiProcessArtifacts;
+      let postExec =
+          DeviceProcessEvents
+          | where TimeGenerated >= ago(lookback)
+          | where FileName in~ ("cmd.exe","powershell.exe","pwsh.exe")
+          | extend ParentImage = InitiatingProcessFileName
+          | extend CmdLine = tostring(ProcessCommandLine)
+          | where
+              (
+                  ParentImage in~ ("WmiPrvSE.exe","services.exe","taskeng.exe","taskhostw.exe","svchost.exe")
+                  and (
+                      CmdLine has_any (" /c "," -c "," /Q /c"," /q /c","powershell -c","pwsh -c")
+                      or (FileName =~ "powershell.exe" and CmdLine has_any (" -enc "," -encodedcommand "))
+                  )
+              )
+          | extend ModuleMatch =
+              case(
+                  ParentImage =~ "WmiPrvSE.exe", "wmiexec.py",
+                  ParentImage =~ "services.exe", "smbexec.py",
+                  ParentImage in~ ("taskeng.exe","taskhostw.exe","svchost.exe"), "atexec.py",
+                  "unknown"
+              )
+          | project ExecTime=TimeGenerated, Computer=DeviceName, FileName, CmdLine, ParentImage, ModuleMatch, ProcessId, InitiatingProcessId, AccountName=AccountName, ReportId;
+      suspiciousLogons
+      | join kind=innerunique (
+          ipcArtifacts
+      ) on Computer
+      | where ArtifactTime between (LogonTime .. LogonTime + correlationWindow)
+      | join kind=innerunique (
+          postExec
+      ) on Computer
+      | where ExecTime between (LogonTime .. LogonTime + 2m)
+      | extend PrepareScore = 10
+      | extend IPCScore = 40
+      | extend ExecScore = 50
+      | extend RiskScore = PrepareScore + IPCScore + ExecScore
+      | extend ToolFamily =
+          case(
+              ArtifactType == "WmiPrvSEStart" or ParentImage =~ "WmiPrvSE.exe", "wmiexec.py",
+              ArtifactType == "ServiceCreate" or ParentImage =~ "services.exe", "smbexec.py",
+              ArtifactType == "TaskCreate" or ParentImage in~ ("taskeng.exe","taskhostw.exe","svchost.exe"), "atexec.py",
+              ModuleMatch
+          )
+      | extend MITRETechnique = "T1133"
+      | project
+          TimeGenerated=ExecTime,
+          Computer,
+          SourceIp,
+          TargetUser,
+          LogonTime,
+          ArtifactTime,
+          ExecTime,
+          ToolFamily,
+          ArtifactType,
+          ParentImage,
+          FileName,
+          CmdLine,
+          ServiceName,
+          ServiceFileName,
+          TaskName,
+          TaskContent,
+          RiskScore,
+          MITRETechnique
+      | order by RiskScore desc, TimeGenerated desc
+    scheduling: 1H
+    schema: defender_for_endpoint::2.0
+    scope:
+      selection: All
+    status: PRODUCTION
+description: Detect IMPACKET three modules in One
+metadata:
+  author: hunt3r (HUNT3R)
+  created: '2026-05-27T12:53:54.327080+00:00'
+  modified: '2026-05-28T13:35:56.496642+00:00'
+  schema: mdr::2.1
+  tlp: amber+strict
+  uuid: 9eba0620-e377-42ab-a995-fd532a4173cb
+  version: 1
+name: mdr_de_t1133_009
+response:
+  alert_severity: Critical
+  alert_trigger: Triggered when the Detection Logic condition is met.
+  false_positives: |-
+    - SCCM
+    - Ansible
+  playbook: |-
+    ### First Response Plan
+    1. Isolate the targeted host and any source system tied to the suspicious 4624 LogonType 3 event if the activity is still active.
+    2. Preserve volatile evidence by collecting Security logs, Sysmon or process creation data, service and task creation events, WMI activity, and active network connections from the affected host.
+    3. Validate the alert chain by confirming the same host shows the network logon, 7045 or 4698 or WmiPrvSE.exe activity, and child cmd.exe or powershell.exe launched with `/c` or `-c` within the correlation window.
+    4. Hunt for related execution by searching across the environment for services.exe, taskeng.exe, or WmiPrvSE.exe spawning cmd.exe or powershell.exe after remote logons from the same suspicious IPs.
+    5. Check for follow-on credential access by reviewing recent access or read attempts against `/etc/passwd` and `/etc/shadow` on Linux systems and for account abuse on any hosts reached from the same source.
+    6. Disable or restrict the implicated account and block the suspicious source IPs if the activity is unauthorized or cannot be immediately explained.
+  procedure:
+    analysis:
+    - action: Get-IpInfo
+      input: IP ADdress
+      output: pDNS history
+    containment:
+    - critical: true
+      description: Isolate host
+    notification:
+    - channel: Email
+      target: jp0@addversary.cz
