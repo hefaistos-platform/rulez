@@ -1,4 +1,0 @@
-DeviceFileEvents
-| where FolderPath has @"C:\ProgramData\PolGuid"
-| where FileName in~ ("in.txt", "out.txt")
-| project TimeGenerated, DeviceName, ActionType, FileName, FolderPath, InitiatingProcessFileName
