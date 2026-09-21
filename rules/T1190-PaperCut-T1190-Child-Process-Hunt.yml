@@ -1,0 +1,53 @@
+id: KS-401495
+title: PaperCut T1190 Child Process Hunt
+description: Detection authored via terminal
+severity: high
+query_language: kql
+query: 'let suspiciousChildren = dynamic(["cmd.exe","powershell.exe","whoami.exe","tasklist.exe","charmap.exe"]);
+
+  let suspiciousTokens = dynamic(["whoami","ver","nltest","quser","invoke-webrequest","iwr"]);
+
+  DeviceProcessEvents
+
+  | where tolower(FileName) == "pc-app.exe"
+
+  | where tolower(InitiatingProcessAccountName) == "system" or tolower(AccountName)
+  == "system"
+
+  | where tolower(FileName) in~ (suspiciousChildren)
+
+  | where isnotempty(InitiatingProcessCommandLine)
+
+  | where tolower(InitiatingProcessCommandLine) has_any (suspiciousTokens) or tolower(ProcessCommandLine)
+  has_any (suspiciousTokens)
+
+  | project TimeGenerated, DeviceName, AccountDomain, AccountName, FileName, FolderPath,
+  ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessCommandLine,
+  InitiatingProcessAccountDomain, InitiatingProcessAccountName, ActionType, DeviceId
+
+  | order by TimeGenerated desc'
+technique: T1190
+implementations:
+  kql: 'let suspiciousChildren = dynamic(["cmd.exe","powershell.exe","whoami.exe","tasklist.exe","charmap.exe"]);
+
+    let suspiciousTokens = dynamic(["whoami","ver","nltest","quser","invoke-webrequest","iwr"]);
+
+    DeviceProcessEvents
+
+    | where tolower(FileName) == "pc-app.exe"
+
+    | where tolower(InitiatingProcessAccountName) == "system" or tolower(AccountName)
+    == "system"
+
+    | where tolower(FileName) in~ (suspiciousChildren)
+
+    | where isnotempty(InitiatingProcessCommandLine)
+
+    | where tolower(InitiatingProcessCommandLine) has_any (suspiciousTokens) or tolower(ProcessCommandLine)
+    has_any (suspiciousTokens)
+
+    | project TimeGenerated, DeviceName, AccountDomain, AccountName, FileName, FolderPath,
+    ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessCommandLine,
+    InitiatingProcessAccountDomain, InitiatingProcessAccountName, ActionType, DeviceId
+
+    | order by TimeGenerated desc'
