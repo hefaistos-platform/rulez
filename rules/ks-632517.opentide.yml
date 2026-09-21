@@ -1,0 +1,47 @@
+id: KS-632517
+title: PaperCut T1190 Child Process Hunt
+description: Detection authored via terminal
+severity: high
+query_language: kql
+query: 'let childProcs = dynamic(["cmd.exe","powershell.exe","whoami.exe","tasklist.exe","charmap.exe"]);
+
+  let suspiciousTokens = dynamic(["whoami","ver","nltest","quser","invoke-webrequest","iwr"]);
+
+  DeviceProcessEvents
+
+  | where FileName =~ "pc-app.exe"
+
+  | where InitiatingProcessAccountName =~ "SYSTEM" or InitiatingProcessAccountSid
+  == "S-1-5-18"
+
+  | where FileName in~ (childProcs)
+
+  | where ProcessCommandLine has_any (suspiciousTokens) or InitiatingProcessCommandLine
+  has_any (suspiciousTokens)
+
+  | project Timestamp, DeviceName, AccountDomain, AccountName, FileName, FolderPath,
+  ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessCommandLine,
+  InitiatingProcessAccountDomain, InitiatingProcessAccountName, InitiatingProcessAccountSid,
+  ActionType, DeviceId, TenantId'
+technique: T1190
+implementations:
+  kql: 'let childProcs = dynamic(["cmd.exe","powershell.exe","whoami.exe","tasklist.exe","charmap.exe"]);
+
+    let suspiciousTokens = dynamic(["whoami","ver","nltest","quser","invoke-webrequest","iwr"]);
+
+    DeviceProcessEvents
+
+    | where FileName =~ "pc-app.exe"
+
+    | where InitiatingProcessAccountName =~ "SYSTEM" or InitiatingProcessAccountSid
+    == "S-1-5-18"
+
+    | where FileName in~ (childProcs)
+
+    | where ProcessCommandLine has_any (suspiciousTokens) or InitiatingProcessCommandLine
+    has_any (suspiciousTokens)
+
+    | project Timestamp, DeviceName, AccountDomain, AccountName, FileName, FolderPath,
+    ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessCommandLine,
+    InitiatingProcessAccountDomain, InitiatingProcessAccountName, InitiatingProcessAccountSid,
+    ActionType, DeviceId, TenantId'
