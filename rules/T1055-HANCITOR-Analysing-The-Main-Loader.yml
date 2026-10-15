@@ -1,0 +1,35 @@
+id: KS-534136
+title: 'HANCITOR: Analysing The Main Loader'
+description: Catch Hancitor's remote injection of downloaded payloads into svchost.exe
+severity: <low|medium|high>
+query_language: kql
+query: '// Rule: Detects HTTP POST requests with victim fingerprint in body containing
+  GUID, BUILD, INFO, IP, TYPE, WIN parameters as potential process injection C2 beacon
+  (T1055); requires all parameters present to reduce noise; anchored on HttpMethod
+  and message content from web session telemetry
+
+  WebPubSubHttpRequest
+
+  | where TimeGenerated > ago(1d)
+
+  | where HttpMethod == "POST"
+
+  | where Message has_all("GUID", "BUILD", "INFO", "IP", "TYPE", "WIN")
+
+  | project TimeGenerated, CallerIpAddress, Url, HttpMethod, Message, StatusCode'
+technique: T1055
+implementations:
+  kql: '// Rule: Detects HTTP POST requests with victim fingerprint in body containing
+    GUID, BUILD, INFO, IP, TYPE, WIN parameters as potential process injection C2
+    beacon (T1055); requires all parameters present to reduce noise; anchored on HttpMethod
+    and message content from web session telemetry
+
+    WebPubSubHttpRequest
+
+    | where TimeGenerated > ago(1d)
+
+    | where HttpMethod == "POST"
+
+    | where Message has_all("GUID", "BUILD", "INFO", "IP", "TYPE", "WIN")
+
+    | project TimeGenerated, CallerIpAddress, Url, HttpMethod, Message, StatusCode'
